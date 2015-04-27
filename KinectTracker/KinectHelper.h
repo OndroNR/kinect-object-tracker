@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <iterator>
+#include <vector>
 
 namespace Microsoft {
     namespace KinectBridge {
@@ -172,6 +173,8 @@ namespace Microsoft {
             /// <returns>S_OK if successful, an error code otherwise</returns>
             HRESULT GetDepthImage(Image* pDepthImage) const;
 
+			HRESULT GetCoordinateMapper(INuiCoordinateMapper **cm);
+
             /// <summary>
             /// Gets the skeleton frame
             /// </summary>
@@ -186,7 +189,20 @@ namespace Microsoft {
             /// <returns>S_OK if successful, an error code otherwise</returns>
             HRESULT GetDepthImageAsArgb(Image* pDepthArgbImage) const;
 
-        protected:
+            // Image stream data
+            BYTE* m_pColorBuffer;
+            INT m_colorBufferSize;
+            INT m_colorBufferPitch;
+            BYTE* m_pDepthBuffer;
+            INT m_depthBufferSize;
+            INT m_depthBufferPitch;
+            BYTE* m_pExtendedDepthBuffer;
+            INT m_extendedDepthBufferSize;
+            //INT m_extendedDepthBufferPitch;
+			INT m_cDepthImagePixels;
+			NUI_COLOR_IMAGE_POINT pDepthToColorPoint[640*480];
+
+		protected:
             // Functions:
             /// <summary>
             /// Converts from Kinect color frame data into Image frame data
@@ -226,14 +242,6 @@ namespace Microsoft {
             /// <param name="pBluePixel">value of blue pixel</param>
             /// <returns>S_OK if successful, an error code otherwise</returns>
             HRESULT DepthShortToRgb(USHORT depth, UINT8* pRedPixel, UINT8* pGreenPixel, UINT8* pBluePixel) const;
-
-            // Image stream data
-            BYTE* m_pColorBuffer;
-            INT m_colorBufferSize;
-            INT m_colorBufferPitch;
-            BYTE* m_pDepthBuffer;
-            INT m_depthBufferSize;
-            INT m_depthBufferPitch;
 
             // Image stream resolution information
             NUI_IMAGE_RESOLUTION m_colorResolution;
@@ -823,6 +831,61 @@ namespace Microsoft {
             // Unlock texture
             pTexture->UnlockRect(0);
 
+
+			// extended depth
+			INuiFrameTexture *extendedDepthTex = nullptr;
+
+			// Extract the extended depth in NUI_DEPTH_IMAGE_PIXEL format from the frame
+			BOOL nearModeOperational = FALSE;
+			hr = m_pNuiSensor->NuiImageFrameGetDepthImagePixelFrameTexture(
+				m_hDepthStreamHandle, 
+				&imageFrame, 
+				&nearModeOperational, 
+				&extendedDepthTex);
+
+			if (FAILED(hr))
+			{
+				//SetStatusMessage(L"Error getting extended depth texture.");
+				return hr;
+			}
+
+			NUI_LOCKED_RECT extendedDepthLockedRect;
+
+			// Lock the frame data to access the un-clamped NUI_DEPTH_IMAGE_PIXELs
+			hr = extendedDepthTex->LockRect(0, &extendedDepthLockedRect, nullptr, 0);
+
+			if (FAILED(hr) || extendedDepthLockedRect.Pitch == 0)
+			{
+				//SetStatusMessage(L"Error getting extended depth texture pixels.");
+				return hr;
+			}
+
+			INT size = extendedDepthLockedRect.size;
+            if (size != m_extendedDepthBufferSize)
+            {
+                delete [] m_pExtendedDepthBuffer;
+                m_pExtendedDepthBuffer = new BYTE[size];
+                m_extendedDepthBufferSize = size;
+            }
+
+			// Copy the depth pixels so we can return the image frame
+			m_cDepthImagePixels = 640*480;
+			errno_t err = memcpy_s(
+				m_pExtendedDepthBuffer,
+				m_cDepthImagePixels * sizeof(NUI_DEPTH_IMAGE_PIXEL), 
+				extendedDepthLockedRect.pBits, 
+				extendedDepthTex->BufferLen());
+
+			extendedDepthTex->UnlockRect(0);
+
+
+			// MapDepthFrameToColorFrame
+			NUI_DEPTH_IMAGE_PIXEL* pDepthPixel = reinterpret_cast<NUI_DEPTH_IMAGE_PIXEL*>( m_pExtendedDepthBuffer );
+			INuiCoordinateMapper *cm = nullptr;
+			GetCoordinateMapper(&cm);
+			cm->MapDepthFrameToColorFrame(m_depthResolution, 640*480, pDepthPixel, NUI_IMAGE_TYPE_COLOR, m_colorResolution, 640*480, &pDepthToColorPoint[0]);
+
+
             // Release image stream frame
             hr = m_pNuiSensor->NuiImageStreamReleaseFrame(m_hDepthStreamHandle, &imageFrame);
 
@@ -1067,6 +1130,20 @@ namespace Microsoft {
             }
 
             hr = GetDepthData(pDepthImage);
+
+            return hr;
+        }
+
+        template <typename Image>
+        HRESULT KinectHelper<Image>::GetCoordinateMapper(INuiCoordinateMapper **cm)
+        {
+            // Fail if Kinect is not initialized
+            if (!m_pNuiSensor)
+            {
+                return E_NUI_DEVICE_NOT_READY;
+            }
+			
+			HRESULT hr = m_pNuiSensor->NuiGetCoordinateMapper(cm);
 
             return hr;
         }
