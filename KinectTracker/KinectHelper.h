@@ -201,6 +201,8 @@ namespace Microsoft {
             //INT m_extendedDepthBufferPitch;
 			INT m_cDepthImagePixels;
 			NUI_COLOR_IMAGE_POINT pDepthToColorPoint[640*480];
+			LARGE_INTEGER m_depthTimestamp;
+			LARGE_INTEGER m_colorTimestamp;
 
 		protected:
             // Functions:
@@ -736,6 +738,8 @@ namespace Microsoft {
                 return hr;
             }
 
+			m_colorTimestamp = imageFrame.liTimeStamp;
+
             // Lock frame texture to allow for copy
             INuiFrameTexture* pTexture = imageFrame.pFrameTexture;
             NUI_LOCKED_RECT lockedRect;
@@ -802,6 +806,8 @@ namespace Microsoft {
             {
                 return hr;
             }
+
+			m_depthTimestamp = imageFrame.liTimeStamp;
 
             // Lock frame texture to allow for copy
             INuiFrameTexture* pTexture = imageFrame.pFrameTexture;
