@@ -4,6 +4,7 @@
 //#include "MyKinectHelper.h"
 #include "KinectHelper.h"
 #include "OpenCVHelper.h"
+#include <fstream>
 
 using namespace cv;
 using namespace Microsoft::KinectBridge;
@@ -205,6 +206,8 @@ int main( int argc, char** argv )
 
 	bool haveSomething = false;
 
+	ofstream outStream("traj.txt");
+
 	while (true)
 	{
 		if (SUCCEEDED(m_frameHelper.UpdateColorFrame()))
@@ -376,6 +379,7 @@ int main( int argc, char** argv )
 				cameraPt.x = cameraPt.z * (avgDepthPoint.x - 320) / f;
 				cameraPt.y = cameraPt.z * (avgDepthPoint.y - 240) / f;
 
+				// world calibration (treba pointpicker...)
 				vector<Point3f> pts;
 				pts.push_back(cameraPt);
 				vector<Point3f> dst;
@@ -388,6 +392,9 @@ int main( int argc, char** argv )
 				// print world space coordinates
 				cout << worldPt << endl;
 
+				outStream << to_string(worldPt.x) << ";" << to_string(worldPt.y) << ";" << to_string(worldPt.z) << ";" << to_string(m_frameHelper.m_depthTimestamp.QuadPart / 1000.0) << endl;
+				outStream.flush();
+
 				if (manualPick)
 				{
 					Point3f manualPickCameraPt;
@@ -399,7 +406,7 @@ int main( int argc, char** argv )
 					cout << "MP: colorPt=" << manualPickPoint << ", cameraPt=" << manualPickCameraPt << endl;					
 				}
 
-				// world calibration (treba pointpicker...)
+				
 
 				// generuj subor x(metre desatinne);y;z;timestamp(sekundy desatinne)
 			}
@@ -422,6 +429,8 @@ int main( int argc, char** argv )
 			break;
 		}
 	}
+
+	outStream.close();
 
 	destroyWindow("Color");
 	destroyWindow("Fg mask");
