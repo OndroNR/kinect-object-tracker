@@ -400,6 +400,26 @@ int main( int argc, char** argv )
 				outStream << to_string(worldPt.x) << ";" << to_string(worldPt.y) << ";" << to_string(worldPt.z) << ";" << to_string(m_frameHelper.m_depthTimestamp.QuadPart / 1000.0) << endl;
 				outStream.flush();
 
+				// draw clusters on map
+				Mat cluster_img(480, 640, CV_8UC3);
+				float cluster_img_scale = 640.0 / 3.0; // 3m = 640px
+				cluster_img.setTo(Scalar(0,0,0));
+				for (int x = 0; x <= 5 ; x++)
+				{
+					line(cluster_img, Point(cluster_img_scale*x*0.6, 0), Point(cluster_img_scale*x*0.6, 479), Scalar(255,255,255));
+				}
+				for (int y = 0; y <= 3 ; y++)
+				{
+					line(cluster_img, Point(0, 480-cluster_img_scale*y*0.6), Point(639, 480-cluster_img_scale*y*0.6), Scalar(255,255,255));
+				}
+				line(cluster_img, Point(cluster_img_scale*4.3*0.6, 0), Point(cluster_img_scale*4.3*0.6, 479), Scalar(255,255,255));
+				line(cluster_img, Point(0, 480-cluster_img_scale*3.2*0.6), Point(639, 480-cluster_img_scale*3.2*0.6), Scalar(255,255,255));
+
+				circle(cluster_img, Point(cluster_img_scale * (worldPt.x), 480-cluster_img_scale*worldPt.z), 3, Scalar(0,255,0));
+				imshow("Clusters", cluster_img);
+
+
+
 				if (manualPick)
 				{
 					Point3f manualPickCameraPt;
