@@ -255,6 +255,11 @@ int main( int argc, char** argv )
                                 Rect(0, 0, cols, rows);
             }
 
+			if (trackWindow.width == 0 || trackWindow.height == 0)
+			{
+				trackObject = 0;
+			}
+
 			ellipse( m_colorMat, trackBox, Scalar(0,0,255), 3 );
 
 			// MapDepthFrameToColorFrame
