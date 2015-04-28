@@ -401,6 +401,8 @@ int main( int argc, char** argv )
 
 		if (haveSomething)
 		{
+			rectangle(m_colorMat, Point(0,0), Point(200, 20), Scalar(0,0,0), CV_FILLED);
+			putText(m_colorMat, to_string(m_frameHelper.m_depthTimestamp.QuadPart), Point(0,15), CV_FONT_HERSHEY_PLAIN, 1.0, Scalar(255,255,255));
 			imshow("Color", m_colorMat);
 			imshow("Fg mask", fgColor);
 			//imshow("Depth", m_depthRgbMat);
