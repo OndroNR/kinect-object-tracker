@@ -294,7 +294,7 @@ int main( int argc, char** argv )
 					if (pColorPoint[i].y < 0 || pColorPoint[i].y >= 480)
 						continue;
 
-					if (fgColor.at<unsigned char>(pColorPoint[i].y, pColorPoint[i].x) > 0)
+					if (fgColor.at<unsigned char>(pColorPoint[i].y, pColorPoint[i].x) == 255)
 					{
 						if (colorStaticMask.at<unsigned char>(pColorPoint[i].y, pColorPoint[i].x) > 0)
 						{
