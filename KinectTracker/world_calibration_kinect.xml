@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<transformMatrix type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>d</dt>
+  <data>
+    -4.98971600e-04 -2.79347572e-04 3.61646192e-04 3.50077636e-01
+     0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+    -9.19597035e-04 2.45124240e-04 -5.07660992e-05 3.34574055e-01
+     0 0 0 1</data></transformMatrix>
+</opencv_storage>
+

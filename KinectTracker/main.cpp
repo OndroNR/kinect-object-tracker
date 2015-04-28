@@ -79,6 +79,10 @@ int trackObject = 0;
 Point origin;
 Rect selection;
 
+bool manualPick = false;
+Point manualPickPoint;
+NUI_DEPTH_IMAGE_POINT manualPickDepthPoint;
+
 Mat fgColor;
 
 
@@ -106,6 +110,20 @@ static void onMouse( int event, int x, int y, int, void* )
         selectObject = false;
         if( selection.width > 0 && selection.height > 0 )
             trackObject = -1;
+        break;
+    }
+}
+
+static void onMouseManual( int event, int x, int y, int, void* )
+{
+    switch( event )
+    {
+    case EVENT_LBUTTONDOWN:
+		manualPick = true;
+        manualPickPoint = Point(x,y);
+        break;
+    case EVENT_LBUTTONUP:
+		manualPick = false;
         break;
     }
 }
@@ -148,6 +166,21 @@ int main( int argc, char** argv )
 
 	cout << "Hello" << endl;
 
+	auto fs = FileStorage();
+	fs.open("world_calibration_kinect.xml", FileStorage::READ);
+	Mat worldTransformationMatrix;
+
+	if (!fs.isOpened())
+	{
+		cerr << "Failed to open world calibration file" << endl;
+	}
+	else
+	{
+		fs["transformMatrix"] >> worldTransformationMatrix;
+		fs.release();
+	}
+
+
 	int dilation_size = 1;
 	Mat morphElement = getStructuringElement( MORPH_ELLIPSE,
                                        Size( 2*dilation_size + 1, 2*dilation_size+1 ),
@@ -165,13 +198,16 @@ int main( int argc, char** argv )
     namedWindow( "Fg mask", 0 );
     setMouseCallback( "Fg mask", onMouse, 0 );
 
+    namedWindow( "Color", 0 );
+    setMouseCallback( "Color", onMouseManual, 0 );
+
 	bool haveSomething = false;
 
 	while (true)
 	{
 		if (SUCCEEDED(m_frameHelper.UpdateColorFrame()))
 		{
-			cout << "UpdateColorFrame" << endl;
+			//cout << "UpdateColorFrame" << endl;
 
 			HRESULT hr = m_frameHelper.GetColorImage(&m_colorMat);
             if (!FAILED(hr))
@@ -184,7 +220,7 @@ int main( int argc, char** argv )
 		}
 		if (SUCCEEDED(m_frameHelper.UpdateDepthFrame()))
 		{
-			cout << "UpdateDepthFrame" << endl;
+			//cout << "UpdateDepthFrame" << endl;
 
 			//HRESULT hr = m_frameHelper.GetDepthImage(&m_depthMat);
 			//HRESULT hr2 = m_frameHelper.GetDepthImageAsArgb(&m_depthRgbMat);
@@ -263,6 +299,19 @@ int main( int argc, char** argv )
 							}
 						}
 					}
+
+					if (manualPick)
+					{
+						if (pColorPoint[i].x == manualPickPoint.x && pColorPoint[i].y == manualPickPoint.y)
+						{
+							if (pDepthPixel[i].depth > 100 && pDepthPixel[i].depth < 10000)
+							{
+								manualPickDepthPoint.x = i / 640;
+								manualPickDepthPoint.y = i % 640;
+								manualPickDepthPoint.depth = pDepthPixel[i].depth;
+							}
+						}
+					}
 				}
 
 				// test: prejdi buffer a vykresli bodky do obrazu
@@ -270,9 +319,6 @@ int main( int argc, char** argv )
 				//{
 				//	circle(m_colorMat, Point(buffer_item.second.x, buffer_item.second.y), 1, Scalar(0,0,255));
 				//}
-
-				if (true)
-				{
 
 				// prejdi buffer a najdi najmensiu hlbku
 				long min_depth = 9999;
@@ -321,16 +367,35 @@ int main( int argc, char** argv )
 
 				Point3f cameraPt;
 				cameraPt.z = avgDepthPoint.z;
-				cameraPt.x = cameraPt.z * (avgDepthPoint.x + 320) / f;
-				cameraPt.y = cameraPt.z * (avgDepthPoint.y + 240) / f;
+				cameraPt.x = cameraPt.z * (avgDepthPoint.x - 320) / f;
+				cameraPt.y = cameraPt.z * (avgDepthPoint.y - 240) / f;
+
+				vector<Point3f> pts;
+				pts.push_back(cameraPt);
+				vector<Point3f> dst;
+				perspectiveTransform(pts, dst, worldTransformationMatrix);
+				Point3f worldPt = dst[0];
 
 				// print camera space coordinates
-				cout << cameraPt << endl;
+				//cout << cameraPt << endl;
+
+				// print world space coordinates
+				cout << worldPt << endl;
+
+				if (manualPick)
+				{
+					Point3f manualPickCameraPt;
+					manualPickCameraPt.z = manualPickDepthPoint.depth;
+					manualPickCameraPt.x = manualPickCameraPt.z * (manualPickDepthPoint.x - 320) / f;
+					manualPickCameraPt.y = manualPickCameraPt.z * (manualPickDepthPoint.y - 240) / f;
+
+					// print camera space coordinates
+					cout << "MP: colorPt=" << manualPickPoint << ", cameraPt=" << manualPickCameraPt << endl;					
+				}
 
 				// world calibration (treba pointpicker...)
 
 				// generuj subor x(metre desatinne);y;z;timestamp(sekundy desatinne)
-				}
 			}
 		}
 
