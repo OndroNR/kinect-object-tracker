@@ -180,6 +180,8 @@ int main( int argc, char** argv )
 		fs.release();
 	}
 
+	Mat colorStaticMask = imread("mask.png");
+	cvtColor(colorStaticMask, colorStaticMask, CV_BGR2GRAY);
 
 	int dilation_size = 1;
 	Mat morphElement = getStructuringElement( MORPH_ELLIPSE,
@@ -286,16 +288,18 @@ int main( int argc, char** argv )
 
 					if (fgColor.at<unsigned char>(pColorPoint[i].y, pColorPoint[i].x) > 0)
 					{
-						int x = 5+i;
-						if (pointPolygonTest(trackBoxVec, Point2f(pColorPoint[i].x, pColorPoint[i].y), false) >= 0)
+						if (colorStaticMask.at<unsigned char>(pColorPoint[i].y, pColorPoint[i].x) > 0)
 						{
-							if (pDepthPixel[i].depth > 100 && pDepthPixel[i].depth < 10000)
+							if (pointPolygonTest(trackBoxVec, Point2f(pColorPoint[i].x, pColorPoint[i].y), false) >= 0)
 							{
-								NUI_DEPTH_IMAGE_POINT dip;
-								dip.x = i / 640; // TODO: je to dobre?
-								dip.y = i % 640;
-								dip.depth = pDepthPixel[i].depth;
-								buffer.push_back(DEPT_COLOR_PAIR(dip, pColorPoint[i]));
+								if (pDepthPixel[i].depth > 100 && pDepthPixel[i].depth < 10000)
+								{
+									NUI_DEPTH_IMAGE_POINT dip;
+									dip.x = i / 640; // TODO: je to dobre?
+									dip.y = i % 640;
+									dip.depth = pDepthPixel[i].depth;
+									buffer.push_back(DEPT_COLOR_PAIR(dip, pColorPoint[i]));
+								}
 							}
 						}
 					}
@@ -351,6 +355,8 @@ int main( int argc, char** argv )
 				{
 					if (buffer_item.first.depth > (min_depth + depth_limit))
 						continue;
+
+					//circle(m_colorMat, Point(buffer_item.second.x, buffer_item.second.y), 1, Scalar(0,0,255));
 
 					avfDepthPointCount++;
 					avgDepthPoint.x += buffer_item.first.x;
