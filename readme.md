@@ -3,7 +3,7 @@ DP 2015 - Galbavy - Kinect object tracker
 **Author:** Ing. Ondrej Galbavý  
 **Master thesis:** Visual analysis of a robot movement using methods of 3D stereo reconstruction  
 **Supervisor:** Ing. Vanda Benešová, PhD.  
-**Keywords:** computer vision, 3D movement tracking, stereo reconstruction 
+**Keywords:** computer vision, 3D movement tracking, stereo reconstruction   
 2015, May  
 
 Thesis Description
@@ -15,4 +15,4 @@ Processing spatial data and tracking the movement in 3D space are current resear
 Coded in C++.  
 Microsoft Visual Studio 2012 + MSVC 11  
 Kinect for Windows SDK v1.8  
-OpenCV 2.4.10 path (d:\data\c3\sdk\OpenCV2410\build\include\opencv) currently hardcoded in OpenCV_*.props for MS VS.  
+OpenCV 2.4.10 path (d:\data\c3\sdk\OpenCV2410\build\include\opencv) currently hardcoded in OpenCV_*.props for MS VS.
